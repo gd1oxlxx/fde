@@ -1,0 +1,69 @@
+要实现同时支持自由作画和骨骼动画系统的功能，可以使用 fabric.js 和 Spine 结合的方式。
+
+fabric.js 是一个功能丰富、易于使用的 HTML5 Canvas 库，可以实现自由作画。
+
+官网: http://fabricjs.com/
+
+Spine 是一个专为游戏和应用程序设计的 2D 骨骼动画库，可以使用 spine-ts JavaScript 运行时在网页中使用 Spine 动画。
+
+官网: http://esotericsoftware.com/
+
+项目例子：
+
+// 引入 fabric.js 和 spine-ts
+import { fabric } from 'fabric';
+import { spine } from 'spine-ts';
+
+// 创建 fabric.js 画布
+const canvas = new fabric.Canvas('c', {
+  width: 800,
+  height: 600,
+});
+
+// 自由作画功能
+canvas.isDrawingMode = true;
+
+// 创建 Spine 动画
+const spineCanvas = document.createElement('canvas');
+spineCanvas.width = 800;
+spineCanvas.height = 600;
+document.body.appendChild(spineCanvas);
+
+const spineRenderer = new spine.canvas.SkeletonRenderer(spineCanvas.getContext('2d'));
+const spineAssetManager = new spine.AssetManager();
+const spineJsonPath = 'your_spine_animation_path/spine-skeleton.json';
+const spineAtlasPath = 'your_spine_animation_path/spine-skeleton.atlas';
+
+spineAssetManager.loadText(spineJsonPath);
+spineAssetManager.loadText(spineAtlasPath);
+spineAssetManager.loadTextureAtlas(spineAtlasPath);
+
+spineAssetManager.load(() => {
+  const spineAtlas = spineAssetManager.get(spineAtlasPath);
+  const spineJson = new spine.SkeletonJson(new spine.AtlasAttachmentLoader(spineAtlas));
+  const skeletonData = spineJson.readSkeletonData(spineAssetManager.get(spineJsonPath));
+  const skeleton = new spine.Skeleton(skeletonData);
+  const animationStateData = new spine.AnimationStateData(skeleton.data);
+  const animationState = new spine.AnimationState(animationStateData);
+
+  // 设置动画并开始播放
+  animationState.setAnimation(0, 'your_animation_name', true);
+
+  // Spine 动画的主循环
+  function animateSpine() {
+    // 更新 Spine 动画
+    const delta = 1 / 60;
+    animationState.update(delta);
+    animationState.apply(skeleton);
+    skeleton.updateWorldTransform();
+
+    // 渲染 Spine 动画
+    spineRenderer.ctx.clearRect(0, 0, spineCanvas.width, spineCanvas.height);
+    spineRenderer.draw(skeleton);
+
+    requestAnimationFrame(animateSpine);
+  }
+
+  animateSpine();
+});
+以上代码使用 fabric.js 创建了一个自由作画的画布，并使用 Spine 创建并播放了一个骨骼动画。两者共存于同一个项目中。
